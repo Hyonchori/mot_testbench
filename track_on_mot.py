@@ -159,6 +159,18 @@ def main(args):
             # update tracks state
             tracker.update(detections)
 
+            # write tracking results
+            if save_pred:
+                for track in tracker.tracks:
+                    if apply_only_matched and not track.is_matched:
+                        continue
+                    trk_xyxy = track.state2xyxy()
+                    trk_id = track.track_id
+                    trk_width = trk_xyxy[2] - trk_xyxy[0]
+                    trk_height = trk_xyxy[3] - trk_xyxy[1]
+                    mot_trk_pred += f'{i + 1},{trk_id},' + \
+                                    f'{trk_xyxy[0]},{trk_xyxy[1]},{trk_width},{trk_height},1,-1,-1,-1\n'
+
             # visualize tracking
             if vis_trk:
                 img_v = plot_track(img_v, tracker.tracks, vis_vel=True, vis_only_matched=apply_only_matched)
@@ -171,7 +183,7 @@ def main(args):
             if visualize:
                 plot_info(img_v, f'{vid_name}: {i + 1} / {len(img_names)}', font_size=1.2, font_thickness=1)
                 cv2.imshow(vid_name, img_v)
-                keyboard_input = cv2.waitKey(1) & 0xff
+                keyboard_input = cv2.waitKey(0) & 0xff
                 if keyboard_input == ord('q'):
                     break
                 elif keyboard_input == 27:  # 27: esc
@@ -218,7 +230,7 @@ def get_args():
     target_select = 'MOT17'  # select in ['MOT17', 'MOT20']
     parser.add_argument('--target_select', type=str, default=target_select)
 
-    target_split = 'test'  # select in ['train', 'test']
+    target_split = 'train'  # select in ['train', 'test']
     parser.add_argument('--target_split', type=str, default=target_split)
 
     target_vid = None  # None: all videos, other numbers: target videos
@@ -237,17 +249,17 @@ def get_args():
 
     # General arguments for inference
     parser.add_argument('--device', type=str, default='0')
-    parser.add_argument('--vis_progress_bar', action='store_true', default=False)
+    parser.add_argument('--vis_progress_bar', action='store_true', default=True)
     parser.add_argument('--out_dir', type=str, default=f'{FILE.parents[0]}/runs/track_results/'
                                                        f'{target_select}_{target_split}')
     parser.add_argument('--run_name', type=str, default='SORT_Test')
     parser.add_argument('--vis_det', action='store_true', default=False)
-    parser.add_argument('--vis_trk', action='store_true', default=True)
+    parser.add_argument('--vis_trk', action='store_true', default=False)
     parser.add_argument('--vis_trk_debug', action='store_true', default=False)
-    parser.add_argument('--visualize', action='store_true', default=True)
+    parser.add_argument('--visualize', action='store_true', default=False)
     parser.add_argument('--view_size', type=int, default=[720, 1280], nargs='+')  # [height, width]
     parser.add_argument('--save_vid', action='store_true', default=False)
-    parser.add_argument('--save_pred', action='store_true', default=False)
+    parser.add_argument('--save_pred', action='store_true', default=True)
     parser.add_argument('--apply_only_matched', action='store_true', default=True)
 
     args = parser.parse_args()

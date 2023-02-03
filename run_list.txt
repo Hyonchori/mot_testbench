@@ -1,0 +1,8 @@
+# for Evaluate on MOT17
+(in TrackEval)python scripts/run_mot_challenge.py --BENCHMARK MOT17 --GT_FOLDER /home/jhc/Desktop/dataset/open_dataset/MOT/data/gt/mot_challenge --TRACKERS_FOLDER /home/jhc/PycharmProjects/pythonProject/SORT_FAMILY/mot_testbench/runs_ref/MOT17_train/BYTE_origin(wish)
+
+# for Evaluate on MOT17 in HOME
+(in TrackEval)python scripts/run_mot_challenge.py --BENCHMARK MOT17 --GT_FOLDER /media/jhc/4AD250EDD250DEAF/dataset/data/gt/mot_challenge --TRACKERS_FOLDER /home/jhc/PycharmProjects/pythonProject/mot_testbench/runs/track_results/MOT17_train/SORT_Test
+
+# for Evaludate on DanceTrack
+(in DanceTrack)python3 TrackEval/scripts/run_mot_challenge.py --SPLIT_TO_EVAL val  --METRICS HOTA CLEAR Identity  --GT_FOLDER /home/jhc/Desktop/dataset/open_dataset/Dancetrack/val --SEQMAP_FILE /home/jhc/Desktop/dataset/open_dataset/Dancetrack/val_seqmap.txt --SKIP_SPLIT_FOL True   --TRACKERS_TO_EVAL '' --TRACKER_SUB_FOLDER ''  --USE_PARALLEL True --NUM_PARALLEL_CORES 8 --PLOT_CURVES True --TRACKERS_FOLDER /home/jhc/PycharmProjects/pythonProject/SORT_FAMILY/OC_SORT/YOLOX_outputs/dancetrack_oc_val/dancetrack_oc_val
