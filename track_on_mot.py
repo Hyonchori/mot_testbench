@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from custom_utils.general_utils import increment_path, xywh2xyxy
 from custom_utils.torch_utils import select_device
-# from custom_utils.plot_utils import letterbox, plot_info, plot_detection, plot_track
+from custom_utils.plot_utils import letterbox, plot_info, plot_detection, plot_track
 
 from datasets.MOT.get_mot_dataset import get_mot_videos, parsing_mot_detection, MOT_CLASSES
 
@@ -24,7 +24,8 @@ from trk_by_det.detector.detector_utils import scale_coords, clip_coords
 from trk_by_det.feature_extractor.config_extractor import get_extractor
 from trk_by_det.detection.config_detection import init_detection_config, make_detection
 from trk_by_det.kalman_filter.config_kalman_filter import init_kalman_filter_config
-# from trk_by_det.tracker.base_tracker import BaseTracker
+from trk_by_det.track.config_track import init_track_config
+from trk_by_det.tracker.base_tracker import BaseTracker
 
 
 @torch.no_grad()
@@ -81,10 +82,11 @@ def main(args):
     extractor = get_extractor(trk_cfg, device) if trk_cfg.type_extractor is not None else None
 
     # load tracker using config file name
-    # tracker = BaseTracker(trk_cfg)
     init_detection_config(trk_cfg)
     init_kalman_filter_config(trk_cfg)
-    # print(f"\nStart tracking using {trk_cfg.tracker_name}!")
+    init_track_config(trk_cfg)
+    tracker = BaseTracker(trk_cfg)
+    print(f"\nStart tracking using {trk_cfg.tracker_name}!")
 
     # iterate video
     for vid_idx, vid_name in enumerate(vid_list):
@@ -120,7 +122,7 @@ def main(args):
             if vis_progress_bar else enumerate(img_names)
 
         # initialize tracker when start each iteration
-        # tracker.initialize()
+        tracker.initialize()
 
         mot_trk_pred = ''
         for i, img_name in iterator:
@@ -147,9 +149,27 @@ def main(args):
 
             detections = make_detection(trk_cfg, det, img, extractor)
 
+            # drawing detection on img_v
+            if vis_det:
+                plot_detection(img_v, detections, MOT_CLASSES, hide_cls=True, hide_confidence=False)
+
+            # predict tracks state
+            tracker.predict()
+
+            # update tracks state
+            tracker.update(detections)
+
+            # visualize tracking
+            if vis_trk:
+                img_v = plot_track(img_v, tracker.tracks, vis_vel=True, vis_only_matched=apply_only_matched)
+
+            # resize img_v
+            if view_size is not None:
+                img_v = letterbox(img_v, view_size, auto=False)[0]
+
             # show img_v
             if visualize:
-                # plot_info(img_v, f'{vid_name}: {i + 1} / {len(img_names)}', font_size=1.2, font_thickness=2)
+                plot_info(img_v, f'{vid_name}: {i + 1} / {len(img_names)}', font_size=1.2, font_thickness=1)
                 cv2.imshow(vid_name, img_v)
                 keyboard_input = cv2.waitKey(1) & 0xff
                 if keyboard_input == ord('q'):
@@ -217,14 +237,14 @@ def get_args():
 
     # General arguments for inference
     parser.add_argument('--device', type=str, default='0')
-    parser.add_argument('--vis_progress_bar', action='store_true', default=True)
+    parser.add_argument('--vis_progress_bar', action='store_true', default=False)
     parser.add_argument('--out_dir', type=str, default=f'{FILE.parents[0]}/runs/track_results/'
                                                        f'{target_select}_{target_split}')
     parser.add_argument('--run_name', type=str, default='SORT_Test')
-    parser.add_argument('--vis_det', action='store_true', default=True)
+    parser.add_argument('--vis_det', action='store_true', default=False)
     parser.add_argument('--vis_trk', action='store_true', default=True)
     parser.add_argument('--vis_trk_debug', action='store_true', default=False)
-    parser.add_argument('--visualize', action='store_true', default=False)
+    parser.add_argument('--visualize', action='store_true', default=True)
     parser.add_argument('--view_size', type=int, default=[720, 1280], nargs='+')  # [height, width]
     parser.add_argument('--save_vid', action='store_true', default=False)
     parser.add_argument('--save_pred', action='store_true', default=False)

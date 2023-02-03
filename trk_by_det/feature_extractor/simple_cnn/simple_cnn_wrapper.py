@@ -6,6 +6,7 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 
 from .model import Net
@@ -62,6 +63,7 @@ class WrappedSimpleCNN(nn.Module):
     def forward(self, x: np.ndarray):
         x = self._preprocessing(x)
         x = self.model(x)
+        x = F.normalize(x)
         x = x.cpu().data.numpy()
         return x
 

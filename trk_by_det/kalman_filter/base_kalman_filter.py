@@ -15,7 +15,7 @@ class BaseKalmanFilter:
             std_weight_position: float = 1. / 20,
             std_weight_velocity: float = 1. / 160,
             is_nsa: bool = False,
-            use_oos: bool = False
+            apply_oos: bool = False
     ):
         # matrices used in kalman prediction and update
         self.A = system_matrix
@@ -30,7 +30,7 @@ class BaseKalmanFilter:
         self.predict_noise_func = predict_noise_func
         self.project_noise_func = project_noise_func
         self.is_nsa = is_nsa
-        self.use_oos = use_oos
+        self.apply_oos = apply_oos
 
         # initial state and covariance
         self._std_weight_position = std_weight_position
@@ -65,7 +65,7 @@ class BaseKalmanFilter:
             self.actual_R = self.R * (1. - conf)
 
         # apply Observation Online Smoothing for 'rematched tracks'
-        if self.use_oos and apply_oos:
+        if self.apply_oos and apply_oos:
             dz = (new_z - self.z) / time_since_update
             frozen_z = self.z.copy()
             for i in range(1, time_since_update):
@@ -79,7 +79,6 @@ class BaseKalmanFilter:
         projected_x = np.matmul(self.H, self.x)
         R = self.project_noise_func(
             pos_weight=self._std_weight_position,
-            vel_weight=self._std_weight_velocity,
             height=self.x[3][0],
             measurement_noise=self.actual_R
         )

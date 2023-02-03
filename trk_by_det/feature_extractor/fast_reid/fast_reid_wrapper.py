@@ -81,7 +81,7 @@ class WrappedFastReID(nn.Module):
     def forward(self, x):
         x = self._preprocessing(x)
         x = self.model(x)
-        x = F.normalize(x, dim=-1)  # Normalize feature to compute cosine distance
+        x = F.normalize(x)  # Normalize feature to compute cosine distance
         x = x.cpu().data.numpy()
         return x
 

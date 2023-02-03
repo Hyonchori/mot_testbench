@@ -113,7 +113,6 @@ def make_detection(
 
         if len(img_crops) > 0:
             features = extractor(img_crops)
-            print(features.shape)
             for res_idx, feat in zip(valid_predictions, features):
                 res = predictions[res_idx]
                 bbox = res[:4]

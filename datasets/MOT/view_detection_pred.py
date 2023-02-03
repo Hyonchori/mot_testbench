@@ -186,7 +186,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # Arguments for KITTI tracking dataset
-    mot_root = '/home/jhc/Desktop/dataset/open_dataset/MOT'
+    mot_root = '/media/jhc/4AD250EDD250DEAF/dataset/mot'
     parser.add_argument('--mot_root', type=str, default=mot_root)
 
     target_select = 'MOT17'
@@ -199,8 +199,8 @@ def parse_args():
     parser.add_argument('--target_vid', type=int, default=target_vid, nargs='+')
 
     pred_dirs = {
-        'byte': '/home/jhc/PycharmProjects/pythonProject/SORT_FAMILY/mot_testbench/trk_by_det/detector/yolox/results/MOT17_test/yolox_x_byte_mot17',
-        'byte_ref': '/home/jhc/PycharmProjects/pythonProject/SORT_FAMILY/mot_testbench/trk_by_det/detector/yolox/results/MOT17_test/byte_yolox_det',
+        'byte': '/home/jhc/PycharmProjects/pythonProject/mot_testbench/trk_by_det/detector/yolox/results/MOT17_test/yolox_x_byte_mot17',
+        'byte_ref': '/home/jhc/PycharmProjects/pythonProject/pre_testbench/trk_by_det/detector/yolox/results/MOT17_test/byte_yolox_det',
     }
     parser.add_argument('--pred_dirs', type=str, default=pred_dirs, nargs='+')  # path of directory including tracking results
 

@@ -98,7 +98,7 @@ def init_kalman_filter_config(cfg):
                 1e-5,
                 10 * vel_weight * height
             ]
-            cov = np.diag(np.square(std), dtype=np.float32)
+            cov = np.diag(np.square(std, dtype=np.float32))
             return cov
 
     elif cfg.type_state == 'cpwh':
@@ -114,7 +114,7 @@ def init_kalman_filter_config(cfg):
                 10 * vel_weight * height,
                 10 * vel_weight * height,
             ]
-            cov = np.diag(np.square(std), dtype=np.float32)
+            cov = np.diag(np.square(std, dtype=np.float32))
             return cov
 
     elif cfg.type_state == 'cpsa':
@@ -151,7 +151,7 @@ def init_kalman_filter_config(cfg):
                 1e-5,
                 vel_weight * height
             ]
-            predict_noise = np.diag(np.square(std), dtype=np.float32)
+            predict_noise = np.diag(np.square(std, dtype=np.float32))
             return predict_noise
 
     elif cfg.type_state == 'cpwh':
@@ -167,7 +167,7 @@ def init_kalman_filter_config(cfg):
                 vel_weight * height,
                 vel_weight * height,
             ]
-            predict_noise = np.diag(np.square(std), dtype=np.float32)
+            predict_noise = np.diag(np.square(std, dtype=np.float32))
             return predict_noise
 
     elif cfg.type_state == 'custom':
@@ -190,7 +190,7 @@ def init_kalman_filter_config(cfg):
                 1e-1,
                 pos_weight * height,
             ]
-            project_noise = np.diag(np.square(std), dtype=np.float32)
+            project_noise = np.diag(np.square(std, dtype=np.float32))
             return project_noise
 
     elif cfg.type_state == 'cpwh':
@@ -202,7 +202,7 @@ def init_kalman_filter_config(cfg):
                 pos_weight * height,
                 pos_weight * height,
             ]
-            project_noise = np.diag(np.square(std), dtype=np.float32)
+            project_noise = np.diag(np.square(std, dtype=np.float32))
             return project_noise
 
     elif cfg.type_state == 'custom':
@@ -237,7 +237,7 @@ def get_kalman_filter(cfg, init_measure: np.ndarray):
         std_weight_position=cfg.std_weight_position,
         std_weight_velocity=cfg.std_weight_velocity,
         is_nsa=cfg.is_nsa,
-        use_oos=cfg.use_oos
+        apply_oos=cfg.apply_oos
     )
 
 
