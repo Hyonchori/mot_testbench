@@ -95,6 +95,8 @@ def get_track(cfg, track_id: int, detection: BaseDetection, kalman_filter: BaseK
         feature_update_func=track_config['feature_update_func'],
         max_age=cfg.max_age,
         init_age=cfg.init_age,
+        aspect_ratio_thr=cfg.aspect_ratio_thr,
+        area_thr=cfg.area_thr,
         feature_gallery_len=cfg.feature_gallery_len,
         ema_alpha=cfg.ema_alpha,
         time_difference=cfg.time_difference,

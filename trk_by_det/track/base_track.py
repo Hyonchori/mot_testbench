@@ -24,6 +24,8 @@ class BaseTrack:
             feature_update_func,
             max_age: int = 30,
             init_age: int = 3,
+            aspect_ratio_thr: float = 1.6,
+            area_thr: int = 100,
             feature_gallery_len: int = 100,
             ema_alpha: float = 0.9,
             time_difference: int = 3,
@@ -31,6 +33,8 @@ class BaseTrack:
         self.track_id = track_id
         self.max_age = max_age
         self.init_age = init_age
+        self.aspect_ratio_thr = aspect_ratio_thr
+        self.area_thr = area_thr
 
         self.kf = kalman_filter
         self.conf = detection.conf
@@ -119,11 +123,14 @@ class BaseTrack:
             if self.is_tentative():
                 self.track_state = TrackState.Ambiguous
 
-            elif self.time_since_update > self.max_age:
+            elif self.time_since_update >= self.max_age:
                 self.track_state = TrackState.Ambiguous
 
             elif self.is_confirmed():
                 self.track_state = TrackState.Lost
+
+            if not self.is_valid_prediction():
+                self.track_state = TrackState.Ambiguous
 
     def is_tentative(self):
         return self.track_state == TrackState.Tentative
@@ -139,6 +146,14 @@ class BaseTrack:
 
     def is_lost(self):
         return self.track_state == TrackState.Lost
+
+    def is_valid_prediction(self):
+        xyxy = self.state2xyxy()
+        height = int(xyxy[3]) - int(xyxy[1])
+        width = int(xyxy[2]) - int(xyxy[0])
+        aspect_ratio = width / height
+        area = width * height
+        return aspect_ratio <= self.aspect_ratio_thr and area >= self.area_thr
 
     def state2xyxy(self):
         projected_x = self.get_projected_state()[0]

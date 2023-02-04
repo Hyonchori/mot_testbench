@@ -17,9 +17,9 @@ def init_detection_config(cfg):
                 [xyxy[0] + 0.5 * width],
                 [xyxy[1] + 0.5 * height],
                 [width * height],
-                [width, height]
+                [width / height]
             ]
-            return np.asarray(cpsa, dtype=np.float32)  # [center_x, center_y, area, aspect ratio]
+            return np.asarray(cpsa)  # [center_x, center_y, area, aspect ratio]
 
     elif cfg.type_state == 'cpah':
         def xyxy2measure(xyxy):
