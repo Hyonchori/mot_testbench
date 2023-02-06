@@ -29,6 +29,7 @@ class BaseTrack:
             feature_gallery_len: int = 100,
             ema_alpha: float = 0.9,
             time_difference: int = 3,
+            apply_obs_to_lost: bool = True
     ):
         self.track_id = track_id
         self.max_age = max_age
@@ -44,6 +45,7 @@ class BaseTrack:
         self.feature_update_func = feature_update_func
         self.ema_alpha = ema_alpha
         self.time_difference = time_difference
+        self.apply_obs_to_lost = apply_obs_to_lost
 
         self.x, self.x_cov = self.get_state()
         self.is_matched = False
@@ -54,6 +56,7 @@ class BaseTrack:
         self.observations = {0: self.last_observation}
         self.velocity = np.array([0, 0])
         self.direction = np.array([0, 0])
+        self.speed = 0.0
         self.track_state = TrackState.Tentative
 
     def get_state(self):
@@ -66,8 +69,18 @@ class BaseTrack:
         self.is_matched = False
         self.age += 1
         self.time_since_update += 1
-        self.kf.predict()
-        self.x, self.x_cov = self.get_state()
+        if self.apply_obs_to_lost and self.is_lost():
+            tmp_z = self.last_observation.copy()
+            tmp_z[:2, 0] += self.velocity * (self.time_since_update - 1)
+            self.kf.z = tmp_z
+            self.x, self.x_cov = self.kf.initialize_state()
+            self.kf.x = self.x
+            self.kf.x_cov = self.x_cov
+            # self.kf.predict()
+            # self.x, self.x_cov = self.get_state()
+        else:
+            self.kf.predict()
+            self.x, self.x_cov = self.get_state()
 
     def measure(self, detection: BaseDetection, apply_oos: bool = False):
         self.is_matched = True
@@ -78,15 +91,16 @@ class BaseTrack:
         self.features = self.feature_update_func(self.features, detection.feature, self.ema_alpha)
 
         # update velocity
-        previous_obs = self.get_previous_observation()
+        previous_obs, dt = self.get_previous_observation()
         tmp_obs = detection.z
         if previous_obs is not None:
-            self.velocity, self.direction = self.get_speed(previous_obs[:2, 0], tmp_obs[:2, 0])
+            self.velocity, self.direction, self.speed = self.get_speed(previous_obs[:2, 0], tmp_obs[:2, 0], dt)
         self.last_observation = tmp_obs
         self.observations[self.age] = tmp_obs
 
     def get_previous_observation(self):
         previous_center = None
+        dt = None
         for i in range(self.time_difference):
             dt = self.time_difference - i
             if self.age - dt in self.observations:
@@ -94,13 +108,12 @@ class BaseTrack:
                 break
         if previous_center is None:
             previous_center = self.last_observation
-        return previous_center
+        return previous_center, dt
 
-    @staticmethod
-    def get_speed(center1: np.ndarray, center2: np.ndarray):
+    def get_speed(self, center1: np.ndarray, center2: np.ndarray, dt: int):
         velocity = center2 - center1
         norm = np.linalg.norm(velocity) + 1e-6
-        return velocity, velocity / norm
+        return velocity / dt, velocity / norm, norm / dt
 
     def update(self):
         if self.is_matched:
@@ -155,6 +168,9 @@ class BaseTrack:
         area = width * height
         return aspect_ratio <= self.aspect_ratio_thr and area >= self.area_thr
 
-    def state2xyxy(self):
-        projected_x = self.get_projected_state()[0]
+    def state2xyxy(self, z=None):
+        if z is None:
+            projected_x = self.get_projected_state()[0]
+        else:
+            projected_x = z
         return self.measure2xyxy_func(projected_x)

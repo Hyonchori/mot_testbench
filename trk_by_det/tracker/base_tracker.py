@@ -29,6 +29,8 @@ class BaseTracker:
     def _init_tracks(self, detections: List[BaseDetection], unmatched_det_indices: List[int]):
         for det_idx in unmatched_det_indices:
             det = detections[det_idx]
+            if det.conf < self.trk_cfg.det_thr_high:
+                continue
             kf = get_kalman_filter(self.trk_cfg, det.z)
             trk = get_track(self.trk_cfg, self.track_id, det, kf)
             self.tracks.append(trk)
@@ -48,9 +50,9 @@ class BaseTracker:
             trk.x[:2] = comp_cp
         return warp
 
-    def update(self, detections: List[BaseDetection]):
+    def update(self, detections: List[BaseDetection], img: np.ndarray = None):
         matched, unmatched_trk_indices, unmatched_det_indices = \
-            self.match(detections)
+            self.match(detections, img)
 
         for det_idx, trk_idx in matched:
             tmp_trk = self.tracks[trk_idx]
@@ -67,10 +69,12 @@ class BaseTracker:
                   and not (self.trk_cfg.delete_ambiguous and track.is_ambiguous())]
         self.tracks = tracks
 
-    def match(self, detections: List[BaseDetection]):
+    def match(self, detections: List[BaseDetection], img: np.ndarray = None):
         matched, unmatched_trk_indices, unmatched_det_indices = \
             self.matching_fn(
+                cfg=self.trk_cfg,
                 trk_list=self.tracks,
                 det_list=detections,
+                img=img
             )
         return matched, unmatched_trk_indices, unmatched_det_indices

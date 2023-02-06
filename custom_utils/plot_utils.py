@@ -104,9 +104,12 @@ def plot_track(
         vis_vel: bool = True,
         vis_only_matched: bool = False,
         empty_name: bool = False,
+        target_states: List[int] = None
 ):
     ref_img = np.zeros_like(img)
     for trk in tracks:
+        if target_states is not None and trk.track_state not in target_states:
+            continue
         xyxy = list(map(int, trk.state2xyxy()))
         track_id = trk.track_id
         color = colors(track_id, True)
@@ -135,6 +138,63 @@ def plot_track(
 
     add_img = cv2.addWeighted(img, 1., ref_img, 0.5, 0.1)
     return add_img
+
+
+def plot_cost(
+        img: np.ndarray,
+        trk_list: List[BaseTrack],
+        det_list: List[BaseDetection],
+        cost_mats,
+        gate_mats,
+        bbox_thickness: int = 2,
+        center_size: int = 2,
+        font_size: float = 0.6,
+        font_thickness: int = 2,
+        vis_vel: bool = True,
+        vis_only_matched: bool = False,
+        empty_name: bool = False,
+):
+    for col, trk in enumerate(trk_list):
+        tmp_img = img.copy()
+        ref_img = np.zeros_like(img)
+        xyxy = list(map(int, trk.state2xyxy()))
+        track_id = trk.track_id
+        color = colors(track_id, True)
+
+        cv2.rectangle(ref_img, xyxy[:2], xyxy[2:], color, -1)
+        text = f'{track_id}: {trk.time_since_update}'
+        plot_label(ref_img, xyxy, text, color, font_size, font_thickness)
+
+        trk_z, trk_z_cov = trk.get_projected_state()
+        cx, cy = trk_z[:2, 0]
+        if vis_vel:
+            direction = trk.velocity
+        else:
+            direction = trk.direction
+        plot_arrow(ref_img, np.array([cx, cy]), direction, color, vis_vel)
+        plot_center(ref_img, xyxy, color, center_size)
+
+        for row, det in enumerate(det_list):
+            xyxy = list(map(int, det.xyxy))
+            conf = det.conf
+            cls = det.cls
+            color = [int(x * conf) for x in colors(cls, True)]
+            if gate_mats[1][row, col] == 1:
+                cv2.rectangle(tmp_img, xyxy[:2], xyxy[2:], color, 1)
+                txt = f'{row}: ' + ', '.join([f'{cost_mat[row, col]:.2f}' for cost_mat in cost_mats])
+                plot_label(tmp_img, xyxy, txt, color, 0.4, 1, upper_left=False)
+            else:
+                cv2.rectangle(ref_img, xyxy[:2], xyxy[2:], color, 1)
+                txt = f'{row}: ' + ', '.join([f'{cost_mat[row, col]:.2f}' for cost_mat in cost_mats])
+                plot_label(ref_img, xyxy, txt, color, 0.4, 1, upper_left=False)
+
+        add_img = cv2.addWeighted(tmp_img, 1., ref_img, 0.5, 0.1)
+        add_img = letterbox(add_img, [720, 1280], auto=False)[0]
+        cv2.imshow('tmp', add_img)
+        cv2.waitKey(0)
+
+    cv2.destroyWindow('tmp')
+
 
 
 def plot_arrow(
@@ -195,17 +255,29 @@ def plot_label(
         label: str,
         color: List[int],
         font_size: float = 0.6,
-        font_thickness: int = 1
+        font_thickness: int = 1,
+        upper_left: bool = True,
 ):
     if not isinstance(label, str):
         label = str(label)
 
     txt_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_size, font_thickness)[0]
     txt_bk_color = [int(c * 0.7) for c in color]
-    cv2.rectangle(img, xyxy[:2], (xyxy[0] + txt_size[0] + 1, xyxy[1] - int(txt_size[1] * 1.5)),
-                  txt_bk_color, -1)
-    cv2.putText(img, label, (xyxy[0], xyxy[1] - int(txt_size[1] * 0.4)),
-                cv2.FONT_HERSHEY_SIMPLEX, font_size, (255, 255, 255), font_thickness)
+
+    if upper_left:
+        cv2.rectangle(img, xyxy[:2], (xyxy[0] + txt_size[0] + 1, xyxy[1] - int(txt_size[1] * 1.5)),
+                      txt_bk_color, -1)
+        cv2.putText(img, label, (xyxy[0], xyxy[1] - int(txt_size[1] * 0.4)),
+                    cv2.FONT_HERSHEY_SIMPLEX, font_size, (255, 255, 255), font_thickness)
+
+    else:  # upper_right
+        cv2.rectangle(img,
+                      (xyxy[2] - txt_size[0] - 1, xyxy[1]),
+                      (xyxy[2], xyxy[1] - int(txt_size[1] * 1.5)),
+                      txt_bk_color, -1)
+        cv2.putText(img, label,
+                    (xyxy[2] - txt_size[0], xyxy[1] - int(txt_size[1] * 0.4)),
+                    cv2.FONT_HERSHEY_SIMPLEX, font_size, (255, 255, 255), font_thickness)
 
 
 def letterbox(

@@ -126,6 +126,7 @@ def main(args):
 
         mot_trk_pred = ''
         for i, img_name in iterator:
+            ts_iter = time.time()
             img_path = os.path.join(img_dir, img_name)
             img = cv2.imread(img_path)
             img_v = img.copy()
@@ -133,6 +134,7 @@ def main(args):
                 print(f'\n--- {i + 1} / {len(img_names)}')
 
             # make detection (using detector or result from MOT17/MOT20)
+            ts_det = time.time()
             if trk_cfg.use_detector and not trk_cfg.use_saved_detector_result:
                 det = detector(img)[0]
                 if det is not None:
@@ -147,17 +149,33 @@ def main(args):
                 if len(det) != 0:
                     det = xywh2xyxy(det)
 
+            # print(f'total det: {len(det)}')
             detections = make_detection(trk_cfg, det, img, extractor)
-
-            # drawing detection on img_v
-            if vis_det:
-                plot_detection(img_v, detections, MOT_CLASSES, hide_cls=True, hide_confidence=False)
+            te_det = time.time()
 
             # predict tracks state
+            ts_pred = time.time()
             tracker.predict()
+            te_pred = time.time()
+
+            # visualize tracking prediction
+            # if vis_trk_debug and visualize:
+            #     img_v = plot_track(img_v, tracker.tracks, vis_vel=False, vis_only_matched=False)
+
+            # apply cmc
+            if trk_cfg.use_cmc:
+                tracker.apply_cmc(img, vid_name, i)
+
+            # visualize tracking prediction
+            if vis_trk_debug and visualize:
+                img_v = plot_track(img_v, tracker.tracks, vis_vel=False, vis_only_matched=False,
+                                   target_states=[5])
 
             # update tracks state
-            tracker.update(detections)
+            ts_update = time.time()
+            tracker.update(detections, img)
+            #tracker.update(detections)
+            te_update = time.time()
 
             # write tracking results
             if save_pred:
@@ -171,12 +189,18 @@ def main(args):
                     mot_trk_pred += f'{i + 1},{trk_id},' + \
                                     f'{trk_xyxy[0]},{trk_xyxy[1]},{trk_width},{trk_height},1,-1,-1,-1\n'
 
+            ts_vis = time.time()
+            # visualize detection
+            if vis_det and visualize:
+                plot_detection(img_v, detections, MOT_CLASSES, hide_cls=True, hide_confidence=False)
+
             # visualize tracking
-            if vis_trk:
+            if vis_trk and visualize:
                 img_v = plot_track(img_v, tracker.tracks, vis_vel=True, vis_only_matched=apply_only_matched)
+                #img_v = plot_track(img_v, tracker.tracks, vis_vel=True, vis_only_matched=False)
 
             # resize img_v
-            if view_size is not None:
+            if view_size is not None and visualize:
                 img_v = letterbox(img_v, view_size, auto=False)[0]
 
             # show img_v
@@ -188,10 +212,20 @@ def main(args):
                     break
                 elif keyboard_input == 27:  # 27: esc
                     sys.exit()
+            te_vis = time.time()
 
             # save img_v in video format
             if vid_writer is not None:
                 vid_writer.write(img_v)
+
+            te_iter = time.time()
+            if not vis_progress_bar:
+                t_det = te_det - ts_det
+                t_pred = te_pred - ts_pred
+                t_update = te_update - ts_update
+                t_vis = te_vis - ts_vis
+                print(f'det: {t_det:.4f}, pred: {t_pred:.4f}, update: {t_update:.4f}, vis: {t_vis:.4f}')
+                print(f'Total: {te_iter - ts_iter:.4f}')
 
         if visualize:
             cv2.destroyWindow(vid_name)
@@ -217,7 +251,8 @@ def main(args):
                         f.write(mot_trk_pred)
                         # print(f'\ttrack prediction result is saved in "{remain_path}"!')
             time.sleep(0.05)
-
+    if save_pred:
+        print(f'\ntrack prediction results are saved in "{save_dir}"!')
 
 
 def get_args():
@@ -252,10 +287,10 @@ def get_args():
     parser.add_argument('--vis_progress_bar', action='store_true', default=True)
     parser.add_argument('--out_dir', type=str, default=f'{FILE.parents[0]}/runs/track_results/'
                                                        f'{target_select}_{target_split}')
-    parser.add_argument('--run_name', type=str, default='SORT_Test')
-    parser.add_argument('--vis_det', action='store_true', default=False)
-    parser.add_argument('--vis_trk', action='store_true', default=False)
-    parser.add_argument('--vis_trk_debug', action='store_true', default=False)
+    parser.add_argument('--run_name', type=str, default='byte_Test')
+    parser.add_argument('--vis_det', action='store_true', default=True)
+    parser.add_argument('--vis_trk', action='store_true', default=True)
+    parser.add_argument('--vis_trk_debug', action='store_true', default=True)
     parser.add_argument('--visualize', action='store_true', default=False)
     parser.add_argument('--view_size', type=int, default=[720, 1280], nargs='+')  # [height, width]
     parser.add_argument('--save_vid', action='store_true', default=False)

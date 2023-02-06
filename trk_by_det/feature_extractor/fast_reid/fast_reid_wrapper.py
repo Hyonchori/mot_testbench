@@ -57,7 +57,6 @@ class WrappedFastReID(nn.Module):
             self.model = self.model.half()
             print('\tHalf tensor type!')
 
-        print(next(self.model.parameters()).shape)
 
     @staticmethod
     def _init_model(config, weights_file: str) -> nn.Module:

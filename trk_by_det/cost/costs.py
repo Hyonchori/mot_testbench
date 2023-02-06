@@ -43,7 +43,7 @@ def get_iou_cost(
             trk_xyxy = tracks[trk_idx].state2xyxy()
             iou_distance = get_iou_distance(trk_xyxy, det_xyxy)
             cost_matrix[row, col] = iou_distance
-            if iou_distance < cost_thr:
+            if iou_distance <= cost_thr:
                 gate_matrix[row, col] = 1.0
 
     return cost_matrix, gate_matrix
@@ -66,7 +66,7 @@ def get_cosine_cost(
         detections: List[BaseDetection],
         trk_indices: List[int] = None,
         det_indices: List[int] = None,
-        cost_thr: float = 0.2
+        cost_thr: float = 0.25
 ):
     cost_matrix = np.zeros((len(det_indices), len(trk_indices)), dtype=np.float32)
     gate_matrix = np.zeros_like(cost_matrix)
@@ -77,7 +77,7 @@ def get_cosine_cost(
             trk_feat = np.asarray(tracks[trk_idx].features)
             cosine_distance = get_cosine_distance(trk_feat, det_feat)
             cost_matrix[row, col] = cosine_distance
-            if cosine_distance < cost_thr:
+            if cosine_distance <= cost_thr:
                 gate_matrix[row, col] = 1.0
 
     return cost_matrix, gate_matrix

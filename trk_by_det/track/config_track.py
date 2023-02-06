@@ -62,12 +62,12 @@ def init_track_config(cfg):
             ]
             return np.asarray(xyxy)
 
-    if cfg.type_feature == 'gallery':
+    if cfg.type_feature == 'gallery' and cfg.type_extractor is not None:
         def feature_update_func(features: list, feature: np.ndarray, ema_alpha: float = None):
             features.append(feature)
             return features
 
-    elif cfg.type_feature == 'ema':
+    elif cfg.type_feature == 'ema' and cfg.type_extractor is not None:
         def feature_update_func(features: list, feature: np.ndarray, ema_alpha: float):
             smooth_feat = ema_alpha * features[-1] + (1 - ema_alpha) * feature
             smooth_feat /= np.linalg.norm(smooth_feat)
@@ -100,4 +100,5 @@ def get_track(cfg, track_id: int, detection: BaseDetection, kalman_filter: BaseK
         feature_gallery_len=cfg.feature_gallery_len,
         ema_alpha=cfg.ema_alpha,
         time_difference=cfg.time_difference,
+        apply_obs_to_lost=cfg.apply_obs_to_lost
     )
