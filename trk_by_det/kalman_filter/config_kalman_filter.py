@@ -72,6 +72,36 @@ def init_kalman_filter_config(cfg):
             [0, 0, 0, 1]
         ], dtype=np.float32)
 
+    elif cfg.type_kalman_filter == 'deep_sort_just_cp':  # [cx, cy, w, h, cx', cy']
+        A = np.array([
+            [1, 0, 0, 0, 1, 0],
+            [0, 1, 0, 0, 0, 1],
+            [0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 1],
+        ], dtype=np.float32)
+        H = np.array([
+            [1, 0, 0, 0, 1, 0],
+            [0, 1, 0, 0, 0, 1],
+            [0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0]
+        ], dtype=np.float32)
+        Q = np.array([
+            [1, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 1],
+        ], dtype=np.float32)
+        R = np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ], dtype=np.float32)
+
     elif cfg.type_kalman_filter == 'custom':
         A = cfg.system_matrix
         H = cfg.projection_matrix
@@ -85,7 +115,7 @@ def init_kalman_filter_config(cfg):
         R = cfg.measurement_noise
 
     '''configure covariance initialization function'''
-    if cfg.type_state == 'cpah':
+    if cfg.type_kalman_filter == 'deep_sort' and cfg.type_state == 'cpah':
         def init_cov_func(pos_weight, vel_weight, height: float = None, state_dim: int = None):
             # state: [cx, cy, aspect_ratio, height, cx', cy', aspect_ratio', height']
             std = [
@@ -101,7 +131,7 @@ def init_kalman_filter_config(cfg):
             cov = np.diag(np.square(std, dtype=np.float32))
             return cov
 
-    elif cfg.type_state == 'cpwh':
+    elif cfg.type_kalman_filter == 'deep_sort' and cfg.type_state == 'cpwh':
         def init_cov_func(pos_weight, vel_weight, height: float = None, state_dim: int = None):
             # state: [cx, cy, width, height, cx', cy', width', height']
             std = [
@@ -138,7 +168,7 @@ def init_kalman_filter_config(cfg):
             return cov
 
     '''configure prediction noise initialization function'''
-    if cfg.type_state == 'cpah':
+    if cfg.type_kalman_filter == 'deep_sort' and cfg.type_state == 'cpah':
         def predict_noise_func(pos_weight, vel_weight, height: float = None, system_noise=None):
             # state: [cx, cy, aspect_ratio, height, cx', cy', aspect_ratio', height']
             std = [
@@ -154,7 +184,7 @@ def init_kalman_filter_config(cfg):
             predict_noise = np.diag(np.square(std, dtype=np.float32))
             return predict_noise
 
-    elif cfg.type_state == 'cpwh':
+    elif cfg.type_kalman_filter == 'deep_sort' and cfg.type_state == 'cpwh':
         def predict_noise_func(pos_weight, vel_weight, height: float = None, system_noise=None):
             # state: [cx, cy, width, height, cx', cy', width', height']
             std = [
@@ -181,7 +211,7 @@ def init_kalman_filter_config(cfg):
             return predict_noise
 
     '''configure projection noise initialization function'''
-    if cfg.type_state == 'cpah':
+    if cfg.type_kalman_filter == 'deep_sort' and cfg.type_state == 'cpah':
         def project_noise_func(pos_weight, height: float = None, measurement_noise=None):
             # state: [cx, cy, aspect_ratio, height, cx', cy', aspect_ratio', height']
             std = [
@@ -193,7 +223,7 @@ def init_kalman_filter_config(cfg):
             project_noise = np.diag(np.square(std, dtype=np.float32))
             return project_noise
 
-    elif cfg.type_state == 'cpwh':
+    elif cfg.type_kalman_filter == 'deep_sort' and cfg.type_state == 'cpwh':
         def project_noise_func(pos_weight, height: float = None, measurement_noise=None):
             # state: [cx, cy, width, height, cx', cy', width', height']
             std = [

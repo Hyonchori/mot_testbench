@@ -100,5 +100,6 @@ def get_track(cfg, track_id: int, detection: BaseDetection, kalman_filter: BaseK
         feature_gallery_len=cfg.feature_gallery_len,
         ema_alpha=cfg.ema_alpha,
         time_difference=cfg.time_difference,
-        apply_obs_to_lost=cfg.apply_obs_to_lost
+        apply_obs_to_lost=cfg.apply_obs_to_lost,
+        confirm_by_conf=cfg.confirm_by_conf
     )

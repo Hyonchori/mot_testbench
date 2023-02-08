@@ -179,10 +179,10 @@ def plot_cost(
             conf = det.conf
             cls = det.cls
             color = [int(x * conf) for x in colors(cls, True)]
-            if gate_mats[1][row, col] == 1:
-                cv2.rectangle(tmp_img, xyxy[:2], xyxy[2:], color, 1)
+            if gate_mats[0][row, col] == 1:
+                cv2.rectangle(tmp_img, xyxy[:2], xyxy[2:], color, 2)
                 txt = f'{row}: ' + ', '.join([f'{cost_mat[row, col]:.2f}' for cost_mat in cost_mats])
-                plot_label(tmp_img, xyxy, txt, color, 0.4, 1, upper_left=False)
+                plot_label(tmp_img, xyxy, txt, color, 0.4, 2, upper_left=False)
             else:
                 cv2.rectangle(ref_img, xyxy[:2], xyxy[2:], color, 1)
                 txt = f'{row}: ' + ', '.join([f'{cost_mat[row, col]:.2f}' for cost_mat in cost_mats])

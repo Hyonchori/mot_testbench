@@ -79,7 +79,7 @@ def main(args):
     ) if trk_cfg.use_detector and not trk_cfg.use_saved_detector_result else None
 
     # load feature_extractor
-    extractor = get_extractor(trk_cfg, device) if trk_cfg.type_extractor is not None else None
+    extractor = get_extractor(trk_cfg, device) if trk_cfg.use_extractor else None
 
     # load tracker using config file name
     init_detection_config(trk_cfg)
@@ -159,8 +159,8 @@ def main(args):
             te_pred = time.time()
 
             # visualize tracking prediction
-            # if vis_trk_debug and visualize:
-            #     img_v = plot_track(img_v, tracker.tracks, vis_vel=False, vis_only_matched=False)
+            if vis_trk_debug and visualize:
+                img_v = plot_track(img_v, tracker.tracks, vis_vel=False, vis_only_matched=False)
 
             # apply cmc
             if trk_cfg.use_cmc:
@@ -169,7 +169,7 @@ def main(args):
             # visualize tracking prediction
             if vis_trk_debug and visualize:
                 img_v = plot_track(img_v, tracker.tracks, vis_vel=False, vis_only_matched=False,
-                                   target_states=[5])
+                                   )
 
             # update tracks state
             ts_update = time.time()
@@ -259,7 +259,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     # Arguments for MOT17/MOT20 dataset
-    mot_root = '/media/jhc/4AD250EDD250DEAF/dataset/mot'  # path to MOT dataset
+    mot_root = '/home/jhc/Desktop/dataset/open_dataset/MOT'  # path to MOT dataset
     parser.add_argument('--mot_root', type=str, default=mot_root)
 
     target_select = 'MOT17'  # select in ['MOT17', 'MOT20']
@@ -268,7 +268,7 @@ def get_args():
     target_split = 'train'  # select in ['train', 'test']
     parser.add_argument('--target_split', type=str, default=target_split)
 
-    target_vid = None  # None: all videos, other numbers: target videos
+    target_vid = [13]  # None: all videos, other numbers: target videos
     # for MOT17 train, select in [2, 4, 5, 9, 10, 11, 13]
     # for MOT17 test, select in [1, 3, 6, 7, 8, 12, 14]
     # for MOT20 train, select in [1, 2, 3, 5]
@@ -288,13 +288,13 @@ def get_args():
     parser.add_argument('--out_dir', type=str, default=f'{FILE.parents[0]}/runs/track_results/'
                                                        f'{target_select}_{target_split}')
     parser.add_argument('--run_name', type=str, default='byte_Test')
-    parser.add_argument('--vis_det', action='store_true', default=True)
+    parser.add_argument('--vis_det', action='store_true', default=False)
     parser.add_argument('--vis_trk', action='store_true', default=True)
     parser.add_argument('--vis_trk_debug', action='store_true', default=True)
-    parser.add_argument('--visualize', action='store_true', default=False)
+    parser.add_argument('--visualize', action='store_true', default=True)
     parser.add_argument('--view_size', type=int, default=[720, 1280], nargs='+')  # [height, width]
     parser.add_argument('--save_vid', action='store_true', default=False)
-    parser.add_argument('--save_pred', action='store_true', default=True)
+    parser.add_argument('--save_pred', action='store_true', default=False)
     parser.add_argument('--apply_only_matched', action='store_true', default=True)
 
     args = parser.parse_args()

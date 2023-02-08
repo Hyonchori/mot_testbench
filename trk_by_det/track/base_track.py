@@ -29,7 +29,8 @@ class BaseTrack:
             feature_gallery_len: int = 100,
             ema_alpha: float = 0.9,
             time_difference: int = 3,
-            apply_obs_to_lost: bool = True
+            apply_obs_to_lost: bool = False,
+            confirm_by_conf: bool = False
     ):
         self.track_id = track_id
         self.max_age = max_age
@@ -46,6 +47,7 @@ class BaseTrack:
         self.ema_alpha = ema_alpha
         self.time_difference = time_difference
         self.apply_obs_to_lost = apply_obs_to_lost
+        self.confirm_by_conf = confirm_by_conf
 
         self.x, self.x_cov = self.get_state()
         self.is_matched = False
@@ -134,7 +136,13 @@ class BaseTrack:
         else:
             self.hits = 0
             if self.is_tentative():
-                self.track_state = TrackState.Ambiguous
+                if not self.confirm_by_conf:
+                    self.track_state = TrackState.Ambiguous
+                else:
+                    if self.conf < 0.6:
+                        self.track_state = TrackState.Ambiguous
+                    elif self.conf >= 0.6 and self.time_since_update >= self.init_age:
+                        self.track_state = TrackState.Ambiguous
 
             elif self.time_since_update >= self.max_age:
                 self.track_state = TrackState.Ambiguous
