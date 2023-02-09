@@ -49,6 +49,7 @@ def main(args):
     target_vid = args.target_vid
     pred_dirs = args.pred_dirs
     view_size = args.view_size
+    single_img = args.single_img
 
     vid_root = os.path.join(mot_root, target_select, target_split)
     if not os.path.isdir(vid_root):
@@ -91,22 +92,39 @@ def main(args):
             img_path = os.path.join(img_root, imgs[img_idx])
             img = cv2.imread(img_path)
 
-            pred_imgs = []
-            for j, (tracker_name, pred) in enumerate(zip(pred_dirs.keys(), preds)):
-                tmp_img = img.copy()
-                plot_info(tmp_img, f'{tracker_name}: {vid_name}: {img_idx + 1} / {len(imgs)}', font_size=2, font_thickness=2)
-                bboxes = pred[img_idx]
-                for bbox in bboxes:
-                    track_id = int(float(bbox[0]))
-                    trk_color = colors(track_id, True)
-                    xywh = np.array(list(map(float, bbox[1: 5])))
-                    xyxy = xywh2xyxy(xywh)
-                    cv2.rectangle(tmp_img, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), trk_color, 2)
-                    plot_label(tmp_img, xyxy, f'{str(track_id)}', trk_color, font_size=0.6)
-                pred_imgs.append(tmp_img)
+            if not single_img:
+                pred_imgs = []
+                for j, (tracker_name, pred) in enumerate(zip(pred_dirs.keys(), preds)):
+                    tmp_img = img.copy()
+                    plot_info(tmp_img, f'{tracker_name}: {vid_name}: {img_idx + 1} / {len(imgs)}', font_size=2, font_thickness=2)
+                    bboxes = pred[img_idx]
+                    for bbox in bboxes:
+                        track_id = int(float(bbox[0]))
+                        trk_color = colors(track_id, True)
+                        xywh = np.array(list(map(float, bbox[1: 5])))
+                        xyxy = xywh2xyxy(xywh)
+                        cv2.rectangle(tmp_img, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), trk_color, 2)
+                        plot_label(tmp_img, xyxy, f'{str(track_id)}', trk_color, font_size=0.6)
+                    pred_imgs.append(tmp_img)
 
-            pred_img = np.vstack(pred_imgs)
-            pred_img = letterbox(pred_img, view_size, auto=False)[0]
+                pred_img = np.vstack(pred_imgs)
+                pred_img = letterbox(pred_img, view_size, auto=False)[0]
+
+            else:
+                pred_img = img.copy()
+                for j, (tracker_name, pred) in enumerate(zip(pred_dirs.keys(), preds)):
+                    plot_info(pred_img, f'{tracker_name}: {vid_name}: {img_idx + 1} / {len(imgs)}', font_size=2,
+                              font_thickness=2)
+                    bboxes = pred[img_idx]
+                    for bbox in bboxes:
+                        track_id = int(float(bbox[0]))
+                        trk_color = colors(track_id, True)
+                        xywh = np.array(list(map(float, bbox[1: 5])))
+                        xyxy = xywh2xyxy(xywh)
+                        cv2.rectangle(pred_img, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), trk_color, 2)
+                        plot_label(pred_img, xyxy, f'{str(track_id)}', trk_color, font_size=0.6)
+
+                pred_img = letterbox(pred_img, view_size, auto=False)[0]
 
             cv2.imshow(vid_name, pred_img)
             keyboard_input = cv2.waitKey(0) & 0xff
@@ -191,21 +209,24 @@ def parse_args():
     target_select = 'MOT17'
     parser.add_argument('--target_select', type=str, default=target_select)
 
-    target_split = 'test'  # ['train', 'test']
+    target_split = 'train'  # ['train', 'test']
     parser.add_argument('--target_split', type=str, default=target_split)
 
-    target_vid = None  # None: all videos, other numbers: target videos
+    target_vid = [13]  # None: all videos, other numbers: target videos
     parser.add_argument('--target_vid', type=int, default=target_vid, nargs='+')
 
     pred_dirs = {
-        'byte_inter': '/home/jhc/PycharmProjects/pythonProject/SORT_FAMILY/mot_testbench/runs_ref/MOT17_test/BYTE_origin2/MOT17-test/SORT/data_interpolated',
-        'byte': '/home/jhc/PycharmProjects/pythonProject/SORT_FAMILY/mot_testbench/runs_ref/MOT17_test/BYTE_origin2/MOT17-test/SORT/data',
+        # 'byte1': '/home/jhc/PycharmProjects/pythonProject/mot_testbench/runs/track_results/MOT17_train/byte_Test15/MOT17-train/test/data',
+        # 'byte2': '/home/jhc/PycharmProjects/pythonProject/mot_testbench/runs/track_results/MOT17_train/byte_Test19/MOT17-train/test/data',
+        'sort': '/home/jhc/PycharmProjects/pythonProject/SORT_FAMILY/mot_testbench/runs/MOT17_train/cmc_Test3/MOT17-train/SORT/data',
+        'sort_CMC': '/home/jhc/PycharmProjects/pythonProject/SORT_FAMILY/mot_testbench/runs/MOT17_train/cmc_Test4/MOT17-train/SORT/data'
         #'byte_ref': '/home/jhc/PycharmProjects/pythonProject/SORT_FAMILY/ByteTrack/YOLOX_outputs/yolox_x_mix_det/track_results',
     }
     parser.add_argument('--pred_dirs', type=str, default=pred_dirs, nargs='+')  # path of directory including tracking results
 
     # General Arguments
-    parser.add_argument("--view-size", type=int, default=None)
+    parser.add_argument('--view-size', type=int, default=None)
+    parser.add_argument('--single_img', action='store_true', default=True)
 
     args = parser.parse_args()
     return args

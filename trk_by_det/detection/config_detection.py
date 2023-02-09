@@ -76,11 +76,11 @@ def get_detection(
 
 
 def is_valid_detection(xyxy, conf, det_thr, aspect_ratio_thr, area_thr):
-    height = int(xyxy[3]) - int(xyxy[1])
-    width = int(xyxy[2]) - int(xyxy[0])
-    aspect_ratio = width / height
-    area = width * height
-    return conf >= det_thr and aspect_ratio <= aspect_ratio_thr and area >= area_thr
+    # height = int(xyxy[3]) - int(xyxy[1])
+    # width = int(xyxy[2]) - int(xyxy[0])
+    # aspect_ratio = width / height
+    # area = width * height
+    return conf >= det_thr  # and aspect_ratio <= aspect_ratio_thr and area >= area_thr
 
 
 @torch.no_grad()

@@ -69,6 +69,13 @@ class BaseTracker:
                   and not (self.trk_cfg.delete_ambiguous and track.is_ambiguous())]
         self.tracks = tracks
 
+    def is_valid_bbox(self, xyxy):
+        height = int(xyxy[3]) - int(xyxy[1])
+        width = int(xyxy[2]) - int(xyxy[0])
+        aspect_ratio = width / height
+        area = width * height
+        return aspect_ratio <= self.trk_cfg.aspect_ratio_thr and area >= self.trk_cfg.area_thr
+
     def match(self, detections: List[BaseDetection], img: np.ndarray = None):
         matched, unmatched_trk_indices, unmatched_det_indices = \
             self.matching_fn(

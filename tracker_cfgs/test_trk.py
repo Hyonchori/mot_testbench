@@ -35,7 +35,7 @@ class TrackerCFG:
         self.aspect_ratio_thr = 1.6
         self.area_thr = 100
         self.type_state = 'cpwh'
-        self.type_kalman_filter = 'deep_sort'
+        self.type_kalman_filter = 'custom'
         self.type_feature = None
         self.max_age = 30
         self.init_age = 3
@@ -43,7 +43,7 @@ class TrackerCFG:
         self.ema_alpha = 0.9
         self.time_difference = 3
         self.apply_oos = False
-        self.type_matching = 'test'
+        self.type_matching = 'test2'
         self.std_weight_position = 1. / 20
         self.std_weight_velocity = 1. / 160
         self.is_nsa = False

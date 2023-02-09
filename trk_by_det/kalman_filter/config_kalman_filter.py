@@ -33,12 +33,14 @@ def init_kalman_filter_config(cfg):
             [0, 0, 0, 0, 0, 0, 1, 0],
             [0, 0, 0, 0, 0, 0, 0, 1]
         ], dtype=np.float32)
+        Q[4:, 4:] *= 0.01
         R = np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0],
             [0, 0, 1, 0],
             [0, 0, 0, 1]
         ], dtype=np.float32)
+        R[2:, 2:] *= 10
 
     elif cfg.type_kalman_filter == 'sort':
         A = np.array([
@@ -65,12 +67,15 @@ def init_kalman_filter_config(cfg):
             [0, 0, 0, 0, 0, 1, 0],
             [0, 0, 0, 0, 0, 0, 1]
         ], dtype=np.float32)
+        Q[-1, -1] *= 0.01
+        Q[4:, 4:] *= 0.01
         R = np.array([
             [1, 0, 0, 0],
             [0, 1, 0, 0],
             [0, 0, 1, 0],
             [0, 0, 0, 1]
         ], dtype=np.float32)
+        R[2:, 2:] *= 10
 
     elif cfg.type_kalman_filter == 'deep_sort_just_cp':  # [cx, cy, w, h, cx', cy']
         A = np.array([
@@ -103,10 +108,40 @@ def init_kalman_filter_config(cfg):
         ], dtype=np.float32)
 
     elif cfg.type_kalman_filter == 'custom':
-        A = cfg.system_matrix
-        H = cfg.projection_matrix
-        Q = cfg.system_noise
-        R = cfg.measurement_noise
+        A = np.array([
+            [1, 0, 0, 0, 1, 0, 0, 0],
+            [0, 1, 0, 0, 0, 1, 0, 0],
+            [0, 0, 1, 0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 0, 0, 0, 1],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1]
+        ], dtype=np.float32)
+        H = np.array([
+            [1, 0, 0, 0, 1, 0, 0, 0],
+            [0, 1, 0, 0, 0, 1, 0, 0],
+            [0, 0, 1, 0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 0, 0, 0, 1]
+        ], dtype=np.float32)
+        Q = np.array([
+            [1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1]
+        ], dtype=np.float32)
+        Q[4:, 4:] *= 0.01
+        R = np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ], dtype=np.float32)
+        R[2:, 2:] *= 10
 
     else:
         A = cfg.system_matrix
@@ -147,7 +182,7 @@ def init_kalman_filter_config(cfg):
             cov = np.diag(np.square(std, dtype=np.float32))
             return cov
 
-    elif cfg.type_state == 'cpsa':
+    elif cfg.type_kalman_filter == 'sort' and cfg.type_state == 'cpsa':
         def init_cov_func(pos_weight, vel_weight, height: float = None, state_dim: int = None):
             # state: [cx, cy, space, aspect_ratio, cx', cy', width', height']
             cov = np.identity(state_dim, dtype=np.float32)
@@ -156,8 +191,6 @@ def init_kalman_filter_config(cfg):
     elif cfg.type_state == 'custom':
         def init_cov_func(pos_weight, vel_weight, height: float = None, state_dim: int = None):
             cov = np.identity(state_dim, dtype=np.float32)
-            cov[4, 4] = 1000
-            cov[5, 5] = 1000
             return cov
 
     else:
@@ -200,7 +233,7 @@ def init_kalman_filter_config(cfg):
             predict_noise = np.diag(np.square(std, dtype=np.float32))
             return predict_noise
 
-    elif cfg.type_state == 'custom':
+    elif cfg.type_kalman_filter == 'custom':
         def predict_noise_func(pos_weight, vel_weight, height: float = None, system_noise=None):
             predict_noise = system_noise
             return predict_noise
@@ -235,7 +268,7 @@ def init_kalman_filter_config(cfg):
             project_noise = np.diag(np.square(std, dtype=np.float32))
             return project_noise
 
-    elif cfg.type_state == 'custom':
+    elif cfg.type_kalman_filter == 'custom':
         def project_noise_func(pos_weight, height: float = None, measurement_noise=None):
             project_noise = measurement_noise
             return project_noise

@@ -182,6 +182,8 @@ def main(args):
                 for track in tracker.tracks:
                     if apply_only_matched and not track.is_matched:
                         continue
+                    if not track.is_valid_prediction():
+                        continue
                     trk_xyxy = track.state2xyxy()
                     trk_id = track.track_id
                     trk_width = trk_xyxy[2] - trk_xyxy[0]
@@ -265,10 +267,10 @@ def get_args():
     target_select = 'MOT17'  # select in ['MOT17', 'MOT20']
     parser.add_argument('--target_select', type=str, default=target_select)
 
-    target_split = 'train'  # select in ['train', 'test']
+    target_split = 'test'  # select in ['train', 'test']
     parser.add_argument('--target_split', type=str, default=target_split)
 
-    target_vid = [13]  # None: all videos, other numbers: target videos
+    target_vid = None  # None: all videos, other numbers: target videos
     # for MOT17 train, select in [2, 4, 5, 9, 10, 11, 13]
     # for MOT17 test, select in [1, 3, 6, 7, 8, 12, 14]
     # for MOT20 train, select in [1, 2, 3, 5]
@@ -287,14 +289,14 @@ def get_args():
     parser.add_argument('--vis_progress_bar', action='store_true', default=True)
     parser.add_argument('--out_dir', type=str, default=f'{FILE.parents[0]}/runs/track_results/'
                                                        f'{target_select}_{target_split}')
-    parser.add_argument('--run_name', type=str, default='byte_Test')
+    parser.add_argument('--run_name', type=str, default='test')
     parser.add_argument('--vis_det', action='store_true', default=False)
     parser.add_argument('--vis_trk', action='store_true', default=True)
-    parser.add_argument('--vis_trk_debug', action='store_true', default=True)
-    parser.add_argument('--visualize', action='store_true', default=True)
+    parser.add_argument('--vis_trk_debug', action='store_true', default=False)
+    parser.add_argument('--visualize', action='store_true', default=False)
     parser.add_argument('--view_size', type=int, default=[720, 1280], nargs='+')  # [height, width]
     parser.add_argument('--save_vid', action='store_true', default=False)
-    parser.add_argument('--save_pred', action='store_true', default=False)
+    parser.add_argument('--save_pred', action='store_true', default=True)
     parser.add_argument('--apply_only_matched', action='store_true', default=True)
 
     args = parser.parse_args()
