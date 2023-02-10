@@ -78,8 +78,8 @@ def main(args):
     )
 
     # load detector using config file name
-    detector = get_detector(type_detector=det_cfg.type_detector)(
-        det_cfg=det_cfg,
+    detector = get_detector(
+        cfg=det_cfg,
         device=device
     ) if use_detector and not use_saved_detector_result else None
 
@@ -167,7 +167,7 @@ def main(args):
             if vis_progress_bar else enumerate(img_names)
 
         # initialize tracker when start each iteration
-        if select_tracker == 1:
+        if select_tracker == 1 or select_tracker == 5:
             if vid_name == 'MOT17-05-FRCNN' or vid_name == 'MOT17-06-FRCNN':
                 tracker_args.track_buffer = 14
             elif vid_name == 'MOT17-13-FRCNN' or vid_name == 'MOT17-14-FRCNN':
@@ -187,8 +187,6 @@ def main(args):
                 tracker_args.track_thresh = 0.3
             else:
                 tracker_args.track_thresh = 0.6
-            tracker.initialize(tracker_args)
-        elif select_tracker == 5:
             tracker.initialize(tracker_args)
         else:
             tracker.initialize()
@@ -255,7 +253,7 @@ def main(args):
                         
             # update BoTSORT
             elif select_tracker == 5:
-                online_targets = tracker.update(det, img)
+                online_targets = tracker.update(det, img, vid_name, i)
                 for t in online_targets:
                     tlwh = t.tlwh
                     conf = t.score
@@ -358,11 +356,11 @@ def get_args():
     parser.add_argument('--out_dir', type=str, default=f'{FILE.parents[0]}/runs_ref/{target_select}_{target_split}')
     parser.add_argument('--run_name', type=str, default='BYTE_origin')
     parser.add_argument('--vis_det', action='store_true', default=False)
-    parser.add_argument('--vis_trk', action='store_true', default=False)
-    parser.add_argument('--visualize', action='store_true', default=False)
+    parser.add_argument('--vis_trk', action='store_true', default=True)
+    parser.add_argument('--visualize', action='store_true', default=True)
     parser.add_argument('--view_size', type=int, default=[720, 1280], nargs='+')  # [height, width]
     parser.add_argument('--save_vid', action='store_true', default=False)
-    parser.add_argument('--save_pred', action='store_true', default=True)
+    parser.add_argument('--save_pred', action='store_true', default=False)
 
     args = parser.parse_args()
     return args

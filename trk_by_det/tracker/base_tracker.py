@@ -25,6 +25,12 @@ class BaseTracker:
     def initialize(self):
         self.tracks = []
         self.track_id = 1
+        self.cmc = BaseCMC(
+            method=self.trk_cfg.type_cmc,
+            downscale=self.trk_cfg.cmc_downscale,
+            use_cmc_file=self.trk_cfg.use_saved_cmc_result,
+            cmc_result_dir=self.trk_cfg.cmc_results_dir
+        )
 
     def _init_tracks(self, detections: List[BaseDetection], unmatched_det_indices: List[int]):
         for det_idx in unmatched_det_indices:
@@ -38,7 +44,8 @@ class BaseTracker:
 
     def predict(self):
         for track in self.tracks:
-            track.predict()
+            # if track.is_confirmed() or track.is_lost():
+                track.predict()
 
     def apply_cmc(self, img, vid_name: str = None, img_idx: int = None):
         warp = self.cmc.apply(img, vid_name, img_idx)

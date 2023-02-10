@@ -225,7 +225,7 @@ class BoTSORT(object):
         if args.with_reid:
             self.encoder = FastReIDInterface(args.fast_reid_config, args.fast_reid_weights, args.device)
 
-        self.gmc = GMC(method=args.cmc_method, verbose=[2, args.ablation])
+        self.gmc = GMC(method=args.cmc_method, use_cmc_file=args.use_cmc_file, cmc_result_dir=args.cmc_result_dir)
 
     def initialize(self, args=None):
         self.args = args
@@ -233,8 +233,9 @@ class BoTSORT(object):
         self.lost_stracks = []
         self.removed_stracks = []
         self.frame_id = 0
+        self.gmc = GMC(method=args.cmc_method, use_cmc_file=args.use_cmc_file, cmc_result_dir=args.cmc_result_dir)
 
-    def update(self, output_results, img):
+    def update(self, output_results, img, vid_name: str = None, img_idx: int = None):
         self.frame_id += 1
         activated_starcks = []
         refind_stracks = []
@@ -297,7 +298,7 @@ class BoTSORT(object):
         STrack.multi_predict(strack_pool)
 
         # Fix camera motion
-        warp = self.gmc.apply(img, dets)
+        warp = self.gmc.apply(img, vid_name, img_idx)
         STrack.multi_gmc(strack_pool, warp)
         STrack.multi_gmc(unconfirmed, warp)
 

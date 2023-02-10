@@ -15,9 +15,9 @@ def make_bot_args():
     args.aspect_ratio_thresh = 1.6
     args.min_box_area = 10
 
-    args.cmc_method = 'none'
-    args.name = 2
-    args.ablation = None
+    args.cmc_method = 'file'
+    args.use_cmc_file = True
+    args.cmc_result_dir = '/home/jhc/PycharmProjects/pythonProject/SORT_FAMILY/BoT-SORT/tracker/GMC_files/MOTChallenge'
 
     args.with_reid = True
     args.fast_reid_config = 'ref_trackers/botsort_tracker/fast_reid/configs/MOT17/sbs_S50.yml'
