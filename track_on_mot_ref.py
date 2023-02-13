@@ -27,7 +27,8 @@ REFERENCE_TRACKERS = {
     2: 'OC-SORT',
     3: 'SORT',
     4: 'DeepSORT',
-    5: 'BotSORT'
+    5: 'BotSORT',
+    6: 'SMILETrack'
 }
 
 
@@ -132,6 +133,15 @@ def main(args):
             tracker_args
         )
 
+    elif select_tracker == 6:  # load SMILETrack tracker
+        print('\nSMILETracker trakcer is selected!')
+        from ref_trackers.smiletrack_tracker.smile_args import make_smile_args
+        from ref_trackers.smiletrack_tracker.mc_bot_sort_copy import BoTSORT
+        tracker_args = make_smile_args()
+        tracker = BoTSORT(
+            tracker_args, frame_rate=30.0
+        )
+
     # iterate video
     start_time = time.time()
     for vid_idx, vid_name in enumerate(vid_list):
@@ -188,16 +198,19 @@ def main(args):
             else:
                 tracker_args.track_thresh = 0.6
             tracker.initialize(tracker_args)
+        elif select_tracker == 6:
+            tracker.initialize(tracker_args)
         else:
             tracker.initialize()
 
         mot_trk_pred = ''
         for i, img_name in iterator:
+            ts_iter = time.time()
             img_path = os.path.join(img_dir, img_name)
             img = cv2.imread(img_path)
             img_v = img.copy()
             if not vis_progress_bar:
-                print('\n')
+                print('\n---')
 
             # make detection (using detector or result from MOT17/MOT20)
             if use_detector and not use_saved_detector_result:
@@ -216,10 +229,11 @@ def main(args):
                 else:
                     det = np.empty((0, 6))
 
-            if vis_det:
+            if visualize and vis_det:
                 plot_bboxes(img_v, det, hide_confidence=True)
 
             pred = []
+            ts_trk = time.time()
             # update BYTE
             if select_tracker == 1:
                 online_targets = tracker.update(det, img.shape[:2], img.shape[:2])
@@ -247,7 +261,7 @@ def main(args):
                 for t in online_targets:
                     tlwh = [t[0], t[1], t[2]-t[0], t[3]-t[1]]
                     tid = t[4]
-                    vertical = tlwh[2] / tlwh[3] > tracker_args.aspect_ratio_thresh
+                    vertical = tlwh[2] / tlwh[3] > tracker_args.vertical_thresh
                     if tlwh[2] * tlwh[3] > tracker_args.min_box_area and not vertical:
                         pred.append([*t[:4], 1, tid])
                         
@@ -262,7 +276,19 @@ def main(args):
                     if tlwh[2] * tlwh[3] > tracker_args.min_box_area and not vertical:
                         pred.append([*t.tlbr, conf, tid])
 
-            if vis_trk:
+            # update SMILETrack
+            elif select_tracker == 6:
+                online_targets = tracker.update(det, img, vid_name, i)
+                for t in online_targets:
+                    tlwh = t.tlwh
+                    conf = t.score
+                    tid = t.track_id
+                    vertical = tlwh[2] / tlwh[3] > tracker_args.aspect_ratio_thresh
+                    if tlwh[2] * tlwh[3] > tracker_args.min_box_area and not vertical:
+                        pred.append([*t.tlbr, conf, tid])
+            te_trk = time.time()
+
+            if visualize and vis_trk:
                 plot_bboxes(img_v, pred, hide_confidence=True)
 
             if save_pred:
@@ -288,6 +314,12 @@ def main(args):
 
             if vid_writer is not None:
                 vid_writer.write(img_v)
+
+            te_iter = time.time()
+            if not vis_progress_bar:
+                t_trk = te_trk - ts_trk
+                print(f'trk: {t_trk:.4f}')
+                print(f'Total: {te_iter - ts_iter:.4f}')
 
         if visualize:
             cv2.destroyWindow(vid_name)
@@ -348,18 +380,19 @@ def get_args():
     parser.add_argument('--detector_result_dir', type=str, default='yolox_x_byte_mot17')
 
     # Arguments for reference tracker
-    parser.add_argument('--select_tracker', type=int, default=5)  # {1: 'byte', 2: 'oc', 3: 'sort', 4: 'deepsort', ...}
+    # {1: 'byte', 2: 'oc', 3: 'sort', 4: 'deepsort', 5: 'BoTSORT', 6: 'SMILETrack', ...}
+    parser.add_argument('--select_tracker', type=int, default=6)
 
     # General arguments for inference
     parser.add_argument('--device', type=str, default='0')
     parser.add_argument('--vis_progress_bar', action='store_true', default=True)
     parser.add_argument('--out_dir', type=str, default=f'{FILE.parents[0]}/runs_ref/{target_select}_{target_split}')
-    parser.add_argument('--run_name', type=str, default='BYTE_origin')
+    parser.add_argument('--run_name', type=str, default='SMILETrack_realorigin')
     parser.add_argument('--vis_det', action='store_true', default=False)
     parser.add_argument('--vis_trk', action='store_true', default=True)
-    parser.add_argument('--visualize', action='store_true', default=True)
+    parser.add_argument('--visualize', action='store_true', default=False)
     parser.add_argument('--view_size', type=int, default=[720, 1280], nargs='+')  # [height, width]
-    parser.add_argument('--save_vid', action='store_true', default=False)
+    parser.add_argument('--save_vid', action='store_true', default=True)
     parser.add_argument('--save_pred', action='store_true', default=False)
 
     args = parser.parse_args()

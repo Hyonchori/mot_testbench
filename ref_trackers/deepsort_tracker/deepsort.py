@@ -4,7 +4,7 @@ import cv2
 import os
 
 from .reid_model import Extractor
-from trackers.deepsort_tracker import kalman_filter, linear_assignment, iou_matching
+from . import kalman_filter, linear_assignment, iou_matching
 from yolox.data.dataloading import get_yolox_datadir
 from .detection import Detection
 from .track import Track
