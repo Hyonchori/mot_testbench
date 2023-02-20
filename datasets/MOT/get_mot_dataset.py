@@ -4,10 +4,11 @@ from collections import defaultdict
 
 
 MOT_SELECTION = ['MOT17', 'MOT20']
-MOT_SPLIT = ['train', 'test']
+MOT_SPLIT = ['train', 'test', 'val']
 MOT_VID = {
     'MOT17':
         {'train': [2, 4, 5, 9, 10, 11, 13],  # total 7
+         'val': [2, 4, 5, 9, 10, 11, 13],  # total 7
          'test': [1, 3, 6, 7, 8, 12, 14]},  # total 7
     'MOT20':
         {'train': [1, 2, 3, 5],  # total 4

@@ -23,12 +23,14 @@ from trk_by_det.detector.detector_utils import scale_coords, clip_coords
 
 
 REFERENCE_TRACKERS = {
+    0: 'Custom',
     1: 'BYTE',
     2: 'OC-SORT',
     3: 'SORT',
     4: 'DeepSORT',
     5: 'BotSORT',
-    6: 'SMILETrack'
+    6: 'SMILETrack',
+    7: 'StrongSORT'
 }
 
 
@@ -85,11 +87,20 @@ def main(args):
     ) if use_detector and not use_saved_detector_result else None
 
     # load tracker using config file name
-    if select_tracker == 1:  # load BYTE tracker
+    if select_tracker == 0:  # load custom tracker
+        print('\nCustom trakcer is selected!')
+        from ref_trackers.custom_tracker.custom_args import make_custom_args
+        from ref_trackers.custom_tracker.byte_tracker import BYTETracker
+        tracker_args = make_custom_args()
+        tracker_args.mot20 = target_select == 'MOT20'
+        tracker = BYTETracker(tracker_args)
+
+    elif select_tracker == 1:  # load BYTE tracker
         print('\nBYTE trakcer is selected!')
         from ref_trackers.byte_tracker.byte_args import make_byte_args
         from ref_trackers.byte_tracker.byte_tracker import BYTETracker
         tracker_args = make_byte_args()
+        tracker_args.mot20 = target_select == 'MOT20'
         tracker = BYTETracker(tracker_args)
 
     elif select_tracker == 2:  # load OC-SORT tracker
@@ -97,6 +108,7 @@ def main(args):
         from ref_trackers.ocsort_tracker.oc_args import make_oc_args
         from ref_trackers.ocsort_tracker.ocsort import OCSort
         tracker_args = make_oc_args()
+        tracker_args.mot20 = target_select == 'MOT20'
         tracker = OCSort(
             det_thresh=tracker_args.track_thresh,
             iou_threshold=tracker_args.iou_thresh,
@@ -110,6 +122,7 @@ def main(args):
         from ref_trackers.sort_tracker.sort_args import make_sort_args
         from ref_trackers.sort_tracker.sort import Sort
         tracker_args = make_sort_args()
+        tracker_args.mot20 = target_select == 'MOT20'
         tracker = Sort(
             det_thresh=tracker_args.track_thresh
         )
@@ -119,6 +132,7 @@ def main(args):
         from ref_trackers.deepsort_tracker.deepsort_args import make_deepsort_args
         from ref_trackers.deepsort_tracker.deepsort import DeepSort
         tracker_args = make_deepsort_args()
+        tracker_args.mot20 = target_select == 'MOT20'
         tracker = DeepSort(
             model_path=tracker_args.model_path,
             min_confidence=tracker_args.track_thresh
@@ -129,6 +143,7 @@ def main(args):
         from ref_trackers.botsort_tracker.bot_args import make_bot_args
         from ref_trackers.botsort_tracker.bot_sort import BoTSORT
         tracker_args = make_bot_args()
+        tracker_args.mot20 = target_select == 'MOT20'
         tracker = BoTSORT(
             tracker_args
         )
@@ -138,9 +153,24 @@ def main(args):
         from ref_trackers.smiletrack_tracker.smile_args import make_smile_args
         from ref_trackers.smiletrack_tracker.mc_bot_sort_copy import BoTSORT
         tracker_args = make_smile_args()
+        tracker_args.mot20 = target_select == 'MOT20'
         tracker = BoTSORT(
             tracker_args, frame_rate=30.0
         )
+
+    elif select_tracker == 7:  # load StrongSORT tracker
+        print('\nStrongTracker trakcer is selected!')
+        from ref_trackers.strongsort_tracker.strong_args import make_strong_args
+        from ref_trackers.strongsort_tracker.nn_matching import NearestNeighborDistanceMetric
+        from ref_trackers.strongsort_tracker.tracker import Tracker
+        tracker_args = make_strong_args()
+        tracker_args.mot20 = target_select == 'MOT20'
+        metric = NearestNeighborDistanceMetric(
+            'cosine',
+            tracker_args.max_cosine_distance,
+            tracker_args.nn_budget
+        )
+        tracker = Tracker(metric)
 
     # iterate video
     start_time = time.time()
@@ -177,40 +207,46 @@ def main(args):
             if vis_progress_bar else enumerate(img_names)
 
         # initialize tracker when start each iteration
-        if select_tracker == 1 or select_tracker == 5:
-            if vid_name == 'MOT17-05-FRCNN' or vid_name == 'MOT17-06-FRCNN':
-                tracker_args.track_buffer = 14
-            elif vid_name == 'MOT17-13-FRCNN' or vid_name == 'MOT17-14-FRCNN':
-                tracker_args.track_buffer = 25
-            else:
-                tracker_args.track_buffer = 30
-
-            if vid_name == 'MOT17-01-FRCNN':
-                tracker_args.track_thresh = 0.65
-            elif vid_name == 'MOT17-06-FRCNN':
-                tracker_args.track_thresh = 0.65
-            elif vid_name == 'MOT17-12-FRCNN':
-                tracker_args.track_thresh = 0.7
-            elif vid_name == 'MOT17-14-FRCNN':
-                tracker_args.track_thresh = 0.67
-            elif vid_name in ['MOT20-06', 'MOT20-08']:
-                tracker_args.track_thresh = 0.3
-            else:
-                tracker_args.track_thresh = 0.6
-            tracker.initialize(tracker_args)
-        elif select_tracker == 6:
+        if target_split == 'val':
             tracker.initialize(tracker_args)
         else:
-            tracker.initialize()
+            if select_tracker == 0:
+                tracker.initialize(tracker_args)
+            elif select_tracker == 1 or select_tracker == 5:
+                if vid_name == 'MOT17-05-FRCNN' or vid_name == 'MOT17-06-FRCNN':
+                    tracker_args.track_buffer = 14
+                elif vid_name == 'MOT17-13-FRCNN' or vid_name == 'MOT17-14-FRCNN':
+                    tracker_args.track_buffer = 25
+                else:
+                    tracker_args.track_buffer = 30
+
+                if vid_name == 'MOT17-01-FRCNN':
+                    tracker_args.track_thresh = 0.65
+                elif vid_name == 'MOT17-06-FRCNN':
+                    tracker_args.track_thresh = 0.65
+                elif vid_name == 'MOT17-12-FRCNN':
+                    tracker_args.track_thresh = 0.7
+                elif vid_name == 'MOT17-14-FRCNN':
+                    tracker_args.track_thresh = 0.67
+                elif vid_name in ['MOT20-06', 'MOT20-08']:
+                    tracker_args.track_thresh = 0.3
+                else:
+                    tracker_args.track_thresh = 0.6
+                tracker.initialize(tracker_args)
+            elif select_tracker == 6:
+                tracker.initialize(tracker_args)
+            else:
+                tracker.initialize()
 
         mot_trk_pred = ''
         for i, img_name in iterator:
             ts_iter = time.time()
+            img_idx = int(img_name.split('.')[0])
             img_path = os.path.join(img_dir, img_name)
             img = cv2.imread(img_path)
             img_v = img.copy()
             if not vis_progress_bar:
-                print('\n---')
+                print(f'\n--- {i + 1} / {len(img_names)}')
 
             # make detection (using detector or result from MOT17/MOT20)
             if use_detector and not use_saved_detector_result:
@@ -234,8 +270,19 @@ def main(args):
 
             pred = []
             ts_trk = time.time()
+            # update Custom
+            if select_tracker == 0:
+                online_targets = tracker.update(det, img.shape[:2], img.shape[:2])
+                for t in online_targets:
+                    tlwh = t.tlwh
+                    conf = t.score
+                    tid = t.track_id
+                    vertical = tlwh[2] / tlwh[3] > tracker_args.vertical_thresh
+                    if tlwh[2] * tlwh[3] > tracker_args.min_box_area and not vertical:
+                        pred.append([*t.tlbr, conf, tid])
+
             # update BYTE
-            if select_tracker == 1:
+            elif select_tracker == 1:
                 online_targets = tracker.update(det, img.shape[:2], img.shape[:2])
                 for t in online_targets:
                     tlwh = t.tlwh
@@ -359,7 +406,7 @@ def get_args():
     target_select = 'MOT17'  # select in ['MOT17', 'MOT20']
     parser.add_argument('--target_select', type=str, default=target_select)
 
-    target_split = 'train'  # select in ['train', 'test']
+    target_split = 'val'  # select in ['train', 'test']
     parser.add_argument('--target_split', type=str, default=target_split)
 
     target_vid = None  # None: all videos, other numbers: target videos
@@ -373,27 +420,27 @@ def get_args():
     parser.add_argument('--target_det', type=str, default=target_det, nargs='+')
 
     # Arguments for detector
-    det_cfg_file = 'test_det'  # file name of target config in tracker_cfgs directory
+    det_cfg_file = 'byte_ablation'  # file name of target config in tracker_cfgs directory
     parser.add_argument('--det_cfg_file', type=str, default=det_cfg_file)
     parser.add_argument('--use_detector', action='store_true', default=True)
     parser.add_argument('--use_saved_detector_result', action='store_true', default=True)
-    parser.add_argument('--detector_result_dir', type=str, default='yolox_x_byte_mot17')
+    parser.add_argument('--detector_result_dir', type=str, default='yolox_x_byte_mot17_ablation2')
 
     # Arguments for reference tracker
-    # {1: 'byte', 2: 'oc', 3: 'sort', 4: 'deepsort', 5: 'BoTSORT', 6: 'SMILETrack', ...}
-    parser.add_argument('--select_tracker', type=int, default=6)
+    # {0: 'custom', 1: 'byte', 2: 'oc', 3: 'sort', 4: 'deepsort', 5: 'BoTSORT', 6: 'SMILETrack', 7: 'StrongSORT...}
+    parser.add_argument('--select_tracker', type=int, default=1)
 
     # General arguments for inference
     parser.add_argument('--device', type=str, default='0')
     parser.add_argument('--vis_progress_bar', action='store_true', default=True)
     parser.add_argument('--out_dir', type=str, default=f'{FILE.parents[0]}/runs_ref/{target_select}_{target_split}')
-    parser.add_argument('--run_name', type=str, default='SMILETrack_realorigin')
-    parser.add_argument('--vis_det', action='store_true', default=False)
+    parser.add_argument('--run_name', type=str, default='BYTE_origin_ablation')
+    parser.add_argument('--vis_det', action='store_true', default=True)
     parser.add_argument('--vis_trk', action='store_true', default=True)
     parser.add_argument('--visualize', action='store_true', default=False)
     parser.add_argument('--view_size', type=int, default=[720, 1280], nargs='+')  # [height, width]
-    parser.add_argument('--save_vid', action='store_true', default=True)
-    parser.add_argument('--save_pred', action='store_true', default=False)
+    parser.add_argument('--save_vid', action='store_true', default=False)
+    parser.add_argument('--save_pred', action='store_true', default=True)
 
     args = parser.parse_args()
     return args

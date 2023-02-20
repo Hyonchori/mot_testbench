@@ -1,6 +1,9 @@
 # for Evaluate on MOT17
 (in TrackEval)python scripts/run_mot_challenge.py --BENCHMARK MOT17 --GT_FOLDER /home/jhc/Desktop/dataset/open_dataset/MOT/data/gt/mot_challenge --TRACKERS_FOLDER /home/jhc/PycharmProjects/pythonProject/mot_testbench/runs/track_results/MOT17_train/byte_Test
 
+# for Evaluate on MOT17-BYTE_ABLATION
+(in TrackEval)python scripts/run_mot_challenge.py --BENCHMARK MOT17 --GT_FOLDER /home/jhc/Desktop/dataset/open_dataset/MOT/data/gt/mot_challenge --TRACKERS_FOLDER /home/jhc/PycharmProjects/pythonProject/mot_testbench/runs_ref/MOT17_val/BYTE_origin_ablation/ --SPLIT_TO_EVAL val
+
 # for Evaluate on MOT17 in HOME
 (in TrackEval)python scripts/run_mot_challenge.py --BENCHMARK MOT17 --GT_FOLDER /media/jhc/4AD250EDD250DEAF/dataset/data/gt/mot_challenge --TRACKERS_FOLDER /home/jhc/PycharmProjects/pythonProject/mot_testbench/runs/track_results/MOT17_train/SORT_Test
 

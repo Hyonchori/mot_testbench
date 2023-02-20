@@ -76,7 +76,7 @@ def main(args):
         vid_dir = os.path.join(vid_root, vid_name)
         img_root = os.path.join(vid_dir, 'img1')
         imgs = sorted(os.listdir(img_root))
-        if target_split == 'train':
+        if target_split == 'train' or target_split == 'val':
             gt_path = os.path.join(vid_dir, 'gt', 'gt.txt')
             gt = parsing_mot_gt(gt_path)
         else:
@@ -199,13 +199,13 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     # Arguments for KITTI tracking dataset
-    mot_root = '/media/jhc/4AD250EDD250DEAF/dataset/mot'
+    mot_root = '/home/jhc/Desktop/dataset/open_dataset/MOT'
     parser.add_argument('--mot_root', type=str, default=mot_root)
 
     target_select = 'MOT17'
     parser.add_argument('--target_select', type=str, default=target_select)
 
-    target_split = 'train'  # ['train', 'test']
+    target_split = 'val'  # ['train', 'val', 'test']
     parser.add_argument('--target_split', type=str, default=target_split)
 
     target_vid = None  # None: all videos, other numbers: target videos
